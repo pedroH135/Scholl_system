@@ -5,8 +5,8 @@ body{
 }
 
 header{
-    background:#2c3e50;
-    color:white;
+    background:#097aeb;
+    color:rgb(255, 255, 255);
     padding:20px;
     text-align:center;
 }
@@ -43,7 +43,7 @@ main{
 }
 
 form{
-    background:white;
+    background:rgb(190, 237, 238);
     padding:20px;
     border-radius:8px;
     width:400px;
@@ -58,12 +58,12 @@ input, select{
 
 button{
     padding:10px;
-    background:#1abc9c;
+    background:#0077ff;
     border:none;
-    color:white;
+    color:rgb(255, 255, 255);
     cursor:pointer;
 }
 
 button:hover{
-    background:#16a085;
+    background:#2362ea;
 }
