@@ -3,7 +3,73 @@
 <head>
 <meta charset="UTF-8">
 <title>Login - Sistema Acadêmico</title>
-<link rel="stylesheet" href="css/style.css">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+}
+
+.container{
+display:flex;
+justify-content:space-between;
+padding:30px;
+}
+
+/* LOGIN */
+
+.login-area{
+width:35%;
+}
+
+/* FEED */
+
+.feed-area{
+width:60%;
+height:600px;
+overflow-y:auto;
+border-left:2px solid #ddd;
+padding-left:20px;
+}
+
+.noticia{
+display:flex;
+gap:15px;
+border-bottom:1px solid #ccc;
+padding:15px 0;
+}
+
+.noticia img{
+width:140px;
+height:90px;
+object-fit:cover;
+border-radius:5px;
+}
+
+.noticia-conteudo{
+flex:1;
+}
+
+.noticia h4{
+margin:0;
+font-size:17px;
+}
+
+.noticia p{
+font-size:14px;
+margin:6px 0;
+}
+
+.noticia a{
+color:#0066cc;
+text-decoration:none;
+font-weight:bold;
+}
+
+</style>
+
 </head>
 
 <body>
@@ -12,17 +78,21 @@
 <h1>Sistema Acadêmico</h1>
 </header>
 
-<main>
+<div class="container">
+
+<!-- LOGIN -->
+
+<div class="login-area">
 
 <h2>Login</h2>
 
-<form>
+<form method="POST" action="/login">
 
 <label>CPF</label>
-<input type="text" placeholder="Digite seu CPF">
+<input type="text" name="cpf" placeholder="Digite seu CPF" required>
 
 <label>Senha</label>
-<input type="password" placeholder="Digite sua senha">
+<input type="password" name="senha" placeholder="Digite sua senha" required>
 
 <button type="submit">Entrar</button>
 
@@ -38,11 +108,78 @@
 
 <br><br>
 
-<a href="/index">
+<a href="/">
 <button>Voltar</button>
 </a>
 
-</main>
+</div>
+
+<!-- FEED DE NOTÍCIAS -->
+
+<div class="feed-area">
+
+<h2>O que está acontecendo no mundo?</h2>
+
+<div id="feedNoticias">
+Carregando notícias...
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+async function carregarNoticias(){
+
+try{
+
+const resposta = await fetch("https://api.spaceflightnewsapi.net/v4/articles/?limit=6")
+
+const dados = await resposta.json()
+
+let html = ""
+
+dados.results.forEach(noticia => {
+
+html += `
+<div class="noticia">
+
+<img src="${noticia.image_url}" alt="imagem">
+
+<div class="noticia-conteudo">
+
+<h4>${noticia.title}</h4>
+
+<p>${noticia.summary.substring(0,120)}...</p>
+
+<a href="${noticia.url}" target="_blank">Ler notícia completa</a>
+
+</div>
+
+</div>
+`
+
+})
+
+document.getElementById("feedNoticias").innerHTML = html
+
+}
+
+catch(e){
+
+document.getElementById("feedNoticias").innerHTML =
+"Erro ao carregar notícias científicas."
+
+}
+
+}
+
+carregarNoticias()
+
+setInterval(carregarNoticias, 5000)
+
+</script>
 
 </body>
 </html>

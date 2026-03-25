@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Meu Desempenho</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #e67e22; /* Cor diferente para diferenciar do professor */
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 40px auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 15px;
+        }
+
+        .info-aluno {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .info-item {
+            font-size: 1.1em;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .btn-voltar {
+            text-decoration: none;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+
+        .btn-voltar:hover {
+            background-color: var(--primary-color);
+        }
+
+        .filtro-secao {
+            margin-bottom: 30px;
+        }
+
+        select {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .grafico-card {
+            background: var(--white);
+            padding: 20px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        canvas {
+            max-height: 450px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h1>Meu Desempenho Acadêmico</h1>
+        <a href="/dashboard_aluno" class="btn-voltar">← Voltar</a>
+    </div>
+
+    <div class="info-aluno">
+        <div class="info-item">
+            <span class="info-label">Aluno:</span> {{ nome }}
+        </div>
+        <div class="info-item">
+            <span class="info-label">Ano Letivo:</span> {{ ano }}º Ano
+        </div>
+    </div>
+
+    <div class="filtro-secao">
+        <label for="materiaSelect" style="font-weight: bold;">Selecione a Matéria:</label><br>
+        <select id="materiaSelect" onchange="atualizarGrafico()">
+            {% if dados_notas %}
+                {% for materia in dados_notas.keys() %}
+                <option value="{{ materia }}">{{ materia.replace('_', ' ') }}</option>
+                {% endfor %}
+            {% else %}
+                <option>Nenhuma nota registrada</option>
+            {% endif %}
+        </select>
+    </div>
+
+    <div class="grafico-card">
+        <h2 id="tituloMateria">Desempenho</h2>
+        <canvas id="graficoNotas"></canvas>
+    </div>
+</div>
+
+<script>
+    const labels = ["AB1.1", "AB1.2", "AB2.1", "AB2.2"];
+    const dadosNotas = JSON.parse('{{ dados_notas | tojson | safe }}');
+    let meuGrafico;
+
+    function atualizarGrafico() {
+        const materia = document.getElementById("materiaSelect").value;
+        const ctx = document.getElementById("graficoNotas").getContext("2d");
+        
+        if (!dadosNotas[materia]) return;
+
+        const notas = dadosNotas[materia];
+        document.getElementById("tituloMateria").innerText = "Notas: " + materia.replace('_', ' ');
+
+        if (meuGrafico) meuGrafico.destroy();
+
+        meuGrafico = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sua Nota',
+                    data: notas,
+                    backgroundColor: [
+                        'rgba(230, 126, 34, 0.7)',
+                        'rgba(230, 126, 34, 0.7)',
+                        'rgba(52, 152, 219, 0.7)',
+                        'rgba(52, 152, 219, 0.7)'
+                    ],
+                    borderColor: 'rgba(230, 126, 34, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        title: { display: true, text: 'Nota (0-10)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+    // Inicializa o gráfico se houver dados
+    window.onload = () => {
+        if (Object.keys(dadosNotas).length > 0) {
+            atualizarGrafico();
+        }
+    };
+</script>
+
+</body>
+</html>

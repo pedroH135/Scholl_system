@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<title>Calendário Acadêmico</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<style>
+
+/* container do calendário */
+
+.calendario-container{
+max-width:900px;
+margin:auto;
+margin-top:40px;
+text-align:center;
+}
+
+/* cabeçalho mês */
+
+.calendario-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+/* botões */
+
+.calendario-header button{
+padding:8px 15px;
+cursor:pointer;
+}
+
+/* tabela */
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+background:#f2f2f2;
+padding:10px;
+}
+
+td{
+height:80px;
+border:1px solid #ddd;
+vertical-align:top;
+padding:5px;
+}
+
+/* dia atual */
+
+.hoje{
+background:#d6ecff;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+<h1>Calendário Acadêmico</h1>
+</header>
+
+<div class="calendario-container">
+
+<div class="calendario-header">
+
+<button onclick="mesAnterior()">◀</button>
+
+<h2 id="mesAno"></h2>
+
+<button onclick="proximoMes()">▶</button>
+
+</div>
+
+<table>
+
+<thead>
+<tr>
+
+<th>Dom</th>
+<th>Seg</th>
+<th>Ter</th>
+<th>Qua</th>
+<th>Qui</th>
+<th>Sex</th>
+<th>Sáb</th>
+
+</tr>
+</thead>
+
+<tbody id="diasCalendario">
+</tbody>
+
+</table>
+
+<br>
+
+<a href="javascript:history.back()">
+<button>Voltar</button>
+</a>
+
+</div>
+
+<script>
+
+let data = new Date()
+
+function gerarCalendario(){
+
+let ano = data.getFullYear()
+let mes = data.getMonth()
+
+let primeiroDia = new Date(ano,mes,1).getDay()
+let totalDias = new Date(ano,mes+1,0).getDate()
+
+let hoje = new Date()
+
+let meses = [
+"Janeiro","Fevereiro","Março","Abril",
+"Maio","Junho","Julho","Agosto",
+"Setembro","Outubro","Novembro","Dezembro"
+]
+
+document.getElementById("mesAno").innerText = meses[mes] + " " + ano
+
+let tabela = document.getElementById("diasCalendario")
+tabela.innerHTML = ""
+
+let linha = document.createElement("tr")
+
+for(let i=0;i<primeiroDia;i++){
+linha.innerHTML += "<td></td>"
+}
+
+for(let dia=1;dia<=totalDias;dia++){
+
+if((primeiroDia + dia -1) %7 ==0){
+tabela.appendChild(linha)
+linha = document.createElement("tr")
+}
+
+let classe = ""
+
+if(
+dia == hoje.getDate() &&
+mes == hoje.getMonth() &&
+ano == hoje.getFullYear()
+){
+classe="hoje"
+}
+
+linha.innerHTML += `<td class="${classe}">${dia}</td>`
+
+}
+
+tabela.appendChild(linha)
+
+}
+
+function mesAnterior(){
+data.setMonth(data.getMonth()-1)
+gerarCalendario()
+}
+
+function proximoMes(){
+data.setMonth(data.getMonth()+1)
+gerarCalendario()
+}
+
+gerarCalendario()
+
+</script>
+
+</body>
+
+</html>

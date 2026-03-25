@@ -1,9 +1,91 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <meta charset="UTF-8">
 <title>Painel do Aluno</title>
-<link rel="stylesheet" href="css/style.css">
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<style>
+
+/* botão pequeno no canto superior direito */
+
+.configuracoes{
+position:absolute;
+top:20px;
+right:30px;
+}
+
+.configuracoes button{
+font-size:12px;
+padding:5px 10px;
+}
+
+/* layout principal */
+
+.dashboard{
+display:flex;
+gap:40px;
+margin-top:40px;
+}
+
+/* coluna esquerda */
+
+.perfil{
+width:250px;
+border:1px solid #ccc;
+padding:20px;
+text-align:center;
+}
+
+/* foto */
+
+.perfil img{
+width:140px;
+height:140px;
+border-radius:50%;
+object-fit:cover;
+margin-bottom:10px;
+}
+
+/* botão atualizar foto */
+
+.botao-foto{
+margin-top:10px;
+}
+
+/* informações do aluno */
+
+.info-aluno{
+margin-top:20px;
+font-size:14px;
+}
+
+/* lado direito */
+
+.painel{
+flex:1;
+}
+
+/* cards */
+
+.cards{
+display:flex;
+gap:20px;
+margin-top:20px;
+}
+
+.card{
+border:1px solid #ccc;
+padding:20px;
+flex:1;
+text-align:center;
+}
+
+</style>
+
 </head>
 
 <body>
@@ -12,26 +94,114 @@
 <h1>Painel do Aluno</h1>
 </header>
 
+<!-- botão pequeno de alterar senha -->
+
+<div class="configuracoes">
+
+<a href="/alterar_senha">
+<button>Alterar senha</button>
+</a>
+
+</div>
+
 <nav>
+
 <ul>
 
-<li><a href="/notas">Minhas Notas</a></li>
+<li><a href="/minhas_notas">Minhas Notas</a></li>
 <li><a href="/materiais">Materiais</a></li>
-<li><a href="/desempenho">Meu Desempenho</a></li>
+<li><a href="/meu_desempenho">Meu Desempenho</a></li>
 <li><a href="/calendario">Calendário</a></li>
 
 </ul>
+
 </nav>
 
 <main>
 
-<h2>Área do aluno</h2>
+<div class="dashboard">
 
-<a href="/index">
+<!-- ========================= -->
+<!-- PERFIL DO ALUNO -->
+<!-- ========================= -->
+
+<div class="perfil">
+
+<img src="{{ foto }}" alt="Foto do aluno">
+
+<div class="botao-foto">
+
+<a href="/editar_foto">
+<button>Atualizar foto</button>
+</a>
+
+</div>
+
+<div class="info-aluno">
+
+<h3>{{ nome }}</h3>
+
+<p>{{ email }}</p>
+
+</div>
+
+</div>
+
+
+<!-- ========================= -->
+<!-- ÁREA DO DASHBOARD -->
+<!-- ========================= -->
+
+<div class="painel">
+
+<h2>Resumo Acadêmico</h2>
+
+<div class="cards">
+
+<div class="card">
+
+<h3>{{ total_materias }}</h3>
+<p>Matérias</p>
+
+</div>
+
+<div class="card">
+
+<h3>{{ ano_letivo }}</h3>
+<p>Ano Letivo</p>
+
+</div>
+
+<div class="card">
+
+<h3>{{ ira }}</h3>
+<p>IRA</p>
+
+</div>
+
+</div>
+
+<br>
+
+<p>
+
+Neste painel você pode acompanhar suas notas, acessar materiais,
+ver seu desempenho acadêmico e acompanhar o calendário escolar.
+
+</p>
+
+</div>
+
+</div>
+
+<br><br>
+
+<a href="/login">
 <button>Sair</button>
 </a>
 
 </main>
 
 </body>
+
 </html>

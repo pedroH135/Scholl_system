@@ -1,35 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Notas</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <title>Lançamento de Notas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { width: 95%; max-width: 1200px; margin: 30px auto; }
+        .instrucao { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #ffeeba; }
+        
+        .tabela-notas { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 40px; }
+        .tabela-notas h2 { padding: 20px; margin: 0; background: #2c3e50; color: white; font-size: 18px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #ecf0f1; padding: 15px; text-align: center; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+
+        .nota-editavel { 
+            background: #fdfdfd; 
+            border: 1px dashed #3498db; 
+            border-radius: 4px; 
+            padding: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: 0.2s;
+        }
+        .nota-editavel:focus { 
+            background: #fff; 
+            border: 2px solid #2ecc71; 
+            outline: none; 
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.3); 
+        }
+        
+        .btn-save-box { margin-top: 20px; text-align: right; }
+    </style>
 </head>
-
 <body>
+    <header><h1>Lançamento de Notas</h1></header>
+    <main class="container">
+        <div class="instrucao">
+            <strong>Dica:</strong> Clique nos valores em azul para editar. A nota é salva automaticamente ao clicar fora da célula.
+        </div>
 
-<header>
-<h1>Lançamento de Notas</h1>
-</header>
+        {% for turma in turmas %}
+        <div class="tabela-notas">
+            <h2>{{ turma.materia }} - {{ turma.ano }}º Ano</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Aluno</th>
+                        <th>AB1.1</th>
+                        <th>AB1.2</th>
+                        <th>AB2.1</th>
+                        <th>AB2.2</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aluno in turma.alunos %}
+                    <tr>
+                        <td style="text-align: left;">{{ aluno.nome }}</td>
+                        <td><div class="nota-editavel nota" contenteditable="true" data-aluno="{{ aluno.id }}" data-materia="{{ turma.materia }}" data-ano="{{ turma.ano }}" data-campo="ab1_1">{{ aluno.ab1_1 or '-' }}</div></td>
+                        <td><div class="nota-editavel nota" contenteditable="true" data-aluno="{{ aluno.id }}" data-materia="{{ turma.materia }}" data-ano="{{ turma.ano }}" data-campo="ab1_2">{{ aluno.ab1_2 or '-' }}</div></td>
+                        <td><div class="nota-editavel nota" contenteditable="true" data-aluno="{{ aluno.id }}" data-materia="{{ turma.materia }}" data-ano="{{ turma.ano }}" data-campo="ab2_1">{{ aluno.ab2_1 or '-' }}</div></td>
+                        <td><div class="nota-editavel nota" contenteditable="true" data-aluno="{{ aluno.id }}" data-materia="{{ turma.materia }}" data-ano="{{ turma.ano }}" data-campo="ab2_2">{{ aluno.ab2_2 or '-' }}</div></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
 
-<main>
+        <div class="btn-save-box">
+            <a href="/dashboard_professor" class="btn-voltar" style="background: #34495e; color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none;">Finalizar Lançamento</a>
+        </div>
+    </main>
 
-<form>
+    <script>
+        document.querySelectorAll(".nota").forEach(celula => {
+            celula.addEventListener("blur", function() {
+                let valor = this.innerText.trim();
+                if (valor === "") { valor = "-"; this.innerText = "-"; }
 
-<label>Aluno</label>
-<input type="text">
-
-<label>Disciplina</label>
-<input type="text">
-
-<label>Nota</label>
-<input type="number">
-
-<button>Salvar Nota</button>
-
-</form>
-
-</main>
-
+                fetch("/atualizar_nota", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: `aluno_id=${this.dataset.aluno}&materia=${this.dataset.materia}&ano=${this.dataset.ano}&campo=${this.dataset.campo}&valor=${valor}`
+                })
+                .then(r => r.json())
+                .then(d => { if(d.status !== "sucesso") alert("Erro ao salvar nota!"); });
+            });
+        });
+    </script>
 </body>
 </html>

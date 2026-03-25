@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>Alterar Senha</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+<h1>Alterar Senha</h1>
+</header>
+
+<main>
+
+<form method="POST">
+
+<label>Senha atual</label>
+<input type="password" name="senha_atual" required>
+
+<br><br>
+
+<label>Nova senha</label>
+<input type="password" name="nova_senha" required>
+
+<br><br>
+
+<button type="submit">Atualizar senha</button>
+
+</form>
+
+<br>
+
+<a href="/dashboard_professor">
+<button>Voltar</button>
+</a>
+
+</main>
+
+</body>
+
+</html>

@@ -1,51 +1,380 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
-<meta charset="UTF-8">
-<title>Cadastro</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro - Sistema Escolar</title>
+
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --primary-hover: #357ABD;
+            --bg-color: #F4F7F6;
+            --card-bg: #FFFFFF;
+            --text-color: #333333;
+            --border-color: #DDDDDD;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .cadastro-container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 550px; /* Um pouco mais largo para acomodar as sub-opções */
+        }
+
+        header h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        select:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .checkbox-item input {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        /* Estilo para as turmas que abrem abaixo da matéria */
+        .anos-opcoes {
+            display: none; /* Escondido por padrão */
+            margin-left: 24px;
+            margin-top: 8px;
+            padding: 10px;
+            background-color: #eef3f8;
+            border-left: 3px solid var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .anos-opcoes label {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 15px;
+            margin-bottom: 0;
+            font-weight: normal;
+            font-size: 13px;
+        }
+
+        .anos-opcoes input {
+            margin-right: 5px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-back {
+            width: 100%;
+            padding: 14px;
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back:hover {
+            background-color: #f0f0f0;
+            border-color: #cccccc;
+        }
+
+        #areaProfessor {
+            display: none;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        #areaAluno {
+            margin-bottom: 20px;
+        }
+    </style>
+
+    <script>
+        function mudarTipo() {
+            let tipo = document.getElementById("tipo").value;
+            let aluno = document.getElementById("areaAluno");
+            let professor = document.getElementById("areaProfessor");
+
+            if (tipo === "aluno") {
+                aluno.style.display = "block";
+                professor.style.display = "none";
+            } else {
+                aluno.style.display = "none";
+                professor.style.display = "block";
+            }
+        }
+
+        // Função para mostrar/esconder as turmas de uma matéria específica
+        function toggleAnos(materiaValor) {
+            let checkbox = document.getElementById("chk_" + materiaValor);
+            let divAnos = document.getElementById("anos_" + materiaValor);
+
+            if (checkbox.checked) {
+                divAnos.style.display = "block";
+            } else {
+                divAnos.style.display = "none";
+                // Opcional: desmarcar as turmas se o professor desmarcar a matéria
+                let turmas = divAnos.querySelectorAll('input[type="checkbox"]');
+                turmas.forEach(t => t.checked = false);
+            }
+        }
+    </script>
 </head>
 
 <body>
 
-<header>
-<h1>Cadastro no Sistema</h1>
-</header>
+    <div class="cadastro-container">
+        <header>
+            <h1>Cadastro no Sistema</h1>
+        </header>
 
-<main>
+        <main>
+            <form method="POST" action="/cadastro">
 
-<form>
+                <div class="form-group">
+                    <label>Nome</label>
+                    <input type="text" name="nome" placeholder="Digite seu nome completo" required>
+                </div>
 
-<label>Nome</label>
-<input type="text">
+                <div class="form-group">
+                    <label>CPF</label>
+                    <input type="text" name="cpf" placeholder="Apenas números" required>
+                </div>
 
-<label>CPF</label>
-<input type="text">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="seuemail@exemplo.com" required>
+                </div>
 
-<label>Email</label>
-<input type="email">
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" name="senha" placeholder="Crie uma senha forte" required>
+                </div>
 
-<label>Senha</label>
-<input type="password">
+                <div class="form-group">
+                    <label>Tipo de usuário</label>
+                    <select name="tipo" id="tipo" onchange="mudarTipo()">
+                        <option value="aluno">Aluno</option>
+                        <option value="professor">Professor</option>
+                    </select>
+                </div>
 
-<label>Tipo de usuário</label>
+                <div id="areaAluno">
+                    <div class="form-group">
+                        <label>Ano Letivo</label>
+                        <select name="ano_letivo_aluno">
+                            <option value="6">6º Ano</option>
+                            <option value="7">7º Ano</option>
+                            <option value="8">8º Ano</option>
+                            <option value="9">9º Ano</option>
+                        </select>
+                    </div>
+                </div>
 
-<select>
-<option>Aluno</option>
-<option>Professor</option>
-</select>
+                <div id="areaProfessor">
+                    <div class="form-group">
+                        <label>Selecione as Matérias e as Turmas que leciona:</label>
+                        
+                        <div class="checkbox-group">
+                            
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Matematica" id="chk_Matematica" onchange="toggleAnos('Matematica')"> Matemática
+                                </label>
+                                <div id="anos_Matematica" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Matematica" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Matematica" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Matematica" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Matematica" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
 
-<button type="submit">Cadastrar</button>
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Lingua_Portuguesa" id="chk_Lingua_Portuguesa" onchange="toggleAnos('Lingua_Portuguesa')"> Língua Portuguesa
+                                </label>
+                                <div id="anos_Lingua_Portuguesa" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Lingua_Portuguesa" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Lingua_Portuguesa" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Lingua_Portuguesa" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Lingua_Portuguesa" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
 
-</form>
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Geografia" id="chk_Geografia" onchange="toggleAnos('Geografia')"> Geografia
+                                </label>
+                                <div id="anos_Geografia" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Geografia" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Geografia" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Geografia" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Geografia" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
 
-<br>
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Historia" id="chk_Historia" onchange="toggleAnos('Historia')"> História
+                                </label>
+                                <div id="anos_Historia" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Historia" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Historia" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Historia" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Historia" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
 
-<a href="/login">
-<button>Voltar</button>
-</a>
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Ciencia" id="chk_Ciencia" onchange="toggleAnos('Ciencia')"> Ciência
+                                </label>
+                                <div id="anos_Ciencia" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Ciencia" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ciencia" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ciencia" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ciencia" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
 
-</main>
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Ingles" id="chk_Ingles" onchange="toggleAnos('Ingles')"> Inglês
+                                </label>
+                                <div id="anos_Ingles" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Ingles" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ingles" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ingles" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ingles" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Artes" id="chk_Artes" onchange="toggleAnos('Artes')"> Artes
+                                </label>
+                                <div id="anos_Artes" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Artes" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Artes" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Artes" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Artes" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="materias" value="Ensino_Religioso" id="chk_Ensino_Religioso" onchange="toggleAnos('Ensino_Religioso')"> Ensino Religioso
+                                </label>
+                                <div id="anos_Ensino_Religioso" class="anos-opcoes">
+                                    <label><input type="checkbox" name="anos_Ensino_Religioso" value="6"> 6º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ensino_Religioso" value="7"> 7º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ensino_Religioso" value="8"> 8º Ano</label>
+                                    <label><input type="checkbox" name="anos_Ensino_Religioso" value="9"> 9º Ano</label>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit">Cadastrar</button>
+
+            </form>
+
+            <a href="/login" style="text-decoration: none;">
+                <button class="btn-back">Voltar para o Login</button>
+            </a>
+        </main>
+    </div>
 
 </body>
+
 </html>

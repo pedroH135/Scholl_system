@@ -1,56 +1,71 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Cadastro de Alunos</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <title>Turmas e Alunos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .container { width: 90%; max-width: 1200px; margin: 30px auto; }
+        .header-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        .turma-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            margin-bottom: 30px; 
+        }
+
+        .turma-card h2 { color: #2c3e50; border-left: 5px solid #3498db; padding-left: 15px; margin-bottom: 20px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background-color: #f8f9fa; color: #34495e; padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        tr:hover { background-color: #f1f7fd; }
+
+        .btn-voltar { background: #34495e; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: bold; }
+        .btn-voltar:hover { background: #2c3e50; }
+        
+        .nota-badge { font-weight: bold; color: #2980b9; }
+    </style>
 </head>
-
 <body>
+    <header><h1>Gestão de Turmas</h1></header>
+    <main class="container">
+        <div class="header-box">
+            <p>Listagem de alunos matriculados em suas disciplinas.</p>
+            <a href="/dashboard_professor" class="btn-voltar">← Voltar</a>
+        </div>
 
-<header>
-<h1>Cadastro de Alunos</h1>
-</header>
-
-<main>
-
-<form>
-
-<label>Nome Completo</label>
-<input type="text">
-
-<label>Data de Nascimento</label>
-<input type="text">
-
-<label>CPF</label>
-<input type="text">
-
-<label>Nome da Mãe</label>
-<input type="text">
-
-<label>Nome do Pai</label>
-<input type="text">
-
-<label>Numero de Matrícula</label>
-<input type="text">
-
-<label>Ano Letivo</label>
-<input type="text">
-
-<label>Endereço</label>
-<input type="text">
-
-<label>Telefone</label>
-<input type="text">
-
-<label>Email</label>
-<input type="email">
-
-<button type="submit">Cadastrar</button>
-
-</form>
-
-</main>
-
+        {% for turma in turmas %}
+        <div class="turma-card">
+            <h2>{{ turma.materia }} - {{ turma.ano }}º Ano</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome do Aluno</th>
+                        <th>Email</th>
+                        <th>AB1.1</th>
+                        <th>AB1.2</th>
+                        <th>AB2.1</th>
+                        <th>AB2.2</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for aluno in turma.alunos %}
+                    <tr>
+                        <td><strong>{{ aluno.nome }}</strong></td>
+                        <td>{{ aluno.email }}</td>
+                        <td class="nota-badge">{{ aluno.ab1_1 or '-' }}</td>
+                        <td class="nota-badge">{{ aluno.ab1_2 or '-' }}</td>
+                        <td class="nota-badge">{{ aluno.ab2_1 or '-' }}</td>
+                        <td class="nota-badge">{{ aluno.ab2_2 or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </main>
 </body>
 </html>

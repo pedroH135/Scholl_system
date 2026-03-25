@@ -1,22 +1,256 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Desempenho Acadêmico</title>
-<link rel="stylesheet" href="css/style.css">
-</head>
+    <meta charset="UTF-8">
+    <title>Desempenho da Turma</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #34495e;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+            --white: #ffffff;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 40px auto;
+            background: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 15px;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .btn-voltar {
+            text-decoration: none;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-voltar:hover {
+            background-color: var(--accent-color);
+        }
+
+        .filtros {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .filtro-grupo {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--secondary-color);
+        }
+
+        select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .grafico-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .card-grafico {
+            background: var(--white);
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        @media (max-width: 900px) {
+            .grafico-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
 <body>
 
-<header>
-<h1>Desempenho Acadêmico</h1>
-</header>
+<div class="container">
+    <div class="header-section">
+        <h1>Análise de Desempenho</h1>
+        <a href="/dashboard_professor" class="btn-voltar">← Voltar ao Dashboard</a>
+    </div>
 
-<main>
+    <div class="filtros">
+        <div class="filtro-grupo">
+            <label for="turmaSelect">Turma (Ano Letivo)</label>
+            <select id="turmaSelect" onchange="atualizarGraficos()">
+                {% for turma in turmas %}
+                <option value="{{ turma }}">{{ turma }}º Ano</option>
+                {% endfor %}
+            </select>
+        </div>
 
-<p>Gráficos de desempenho aparecerão aqui.</p>
+        <div class="filtro-grupo">
+            <label for="materiaSelect">Matéria</label>
+            <select id="materiaSelect" onchange="atualizarGraficos()">
+                {% for materia in materias %}
+                <option value="{{ materia }}">{{ materia.replace('_', ' ') }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-</main>
+        <div class="filtro-grupo">
+            <label for="alunoSelect">Aluno Específico</label>
+            <select id="alunoSelect" onchange="atualizarGraficoAluno()">
+                </select>
+        </div>
+    </div>
+
+    <div class="grafico-container">
+        <div class="card-grafico">
+            <h2>Média da Turma</h2>
+            <canvas id="graficoTurma"></canvas>
+        </div>
+        <div class="card-grafico">
+            <h2>Desempenho Individual</h2>
+            <canvas id="graficoAluno"></canvas>
+        </div>
+    </div>
+</div>
+
+<script>
+    const labels = ["AB1.1", "AB1.2", "AB2.1", "AB2.2"];
+    const dados = JSON.parse('{{ dados | tojson | safe }}');
+    
+    let graficoTurma;
+    let graficoAluno;
+
+    function atualizarGraficos() {
+        const turma = document.getElementById("turmaSelect").value;
+        const materia = document.getElementById("materiaSelect").value;
+        const selectAluno = document.getElementById("alunoSelect");
+        
+        selectAluno.innerHTML = "";
+
+        // Verifica se existem dados para a combinação selecionada 
+        if (!dados[turma] || !dados[turma][materia] || Object.keys(dados[turma][materia]).length === 0) {
+            if (graficoTurma) graficoTurma.destroy();
+            if (graficoAluno) graficoAluno.destroy();
+            selectAluno.innerHTML = "<option>Sem dados</option>";
+            return;
+        }
+
+        const alunosData = dados[turma][materia];
+        const nomesAlunos = Object.keys(alunosData);
+
+        nomesAlunos.forEach(nome => {
+            let op = document.createElement("option");
+            op.value = nome;
+            op.text = nome;
+            selectAluno.appendChild(op);
+        });
+
+        // Cálculo da Média da Turma 
+        let medias = [0, 0, 0, 0];
+        nomesAlunos.forEach(nome => {
+            const notas = alunosData[nome];
+            for (let i = 0; i < 4; i++) {
+                medias[i] += (notas[i] || 0);
+            }
+        });
+
+        medias = medias.map(m => (m / nomesAlunos.length).toFixed(1));
+
+        if (graficoTurma) graficoTurma.destroy();
+        graficoTurma = new Chart(document.getElementById("graficoTurma"), {
+            type: "line",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Média da Turma",
+                    data: medias,
+                    borderColor: "#3498db",
+                    backgroundColor: "rgba(52, 152, 219, 0.1)",
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 10 } } }
+        });
+
+        atualizarGraficoAluno();
+    }
+
+    function atualizarGraficoAluno() {
+        const turma = document.getElementById("turmaSelect").value;
+        const materia = document.getElementById("materiaSelect").value;
+        const aluno = document.getElementById("alunoSelect").value;
+
+        if (!dados[turma] || !dados[turma][materia] || !dados[turma][materia][aluno]) return;
+
+        const notas = dados[turma][materia][aluno];
+
+        if (graficoAluno) graficoAluno.destroy();
+        graficoAluno = new Chart(document.getElementById("graficoAluno"), {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Notas de ${aluno}`,
+                    data: notas,
+                    backgroundColor: "#2ecc71",
+                    borderRadius: 5
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 10 } } }
+        });
+    }
+
+    // Inicializa os gráficos ao carregar
+    window.onload = atualizarGraficos;
+</script>
 
 </body>
 </html>
