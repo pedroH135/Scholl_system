@@ -67,3 +67,160 @@ button{
 button:hover{
     background:#2362ea;
 }
+
+/* =========================================================
+   ESTILIZAÇÃO DAS PÁGINAS DE FEEDBACK
+   ========================================================= */
+
+/* Container principal para centralizar e limitar a largura */
+.feedback-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+/* Cartões brancos para separar as seções (Formulário e Lista) */
+.feedback-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    padding: 30px;
+    border: 1px solid #eaeaea;
+}
+
+.feedback-card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+/* =======================================
+   FORMULÁRIOS E INPUTS
+   ======================================= */
+.feedback-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.feedback-card label {
+    font-weight: 600;
+    color: #555;
+    margin-bottom: -5px;
+}
+
+.feedback-card select,
+.feedback-card textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    resize: vertical; /* Permite aumentar o tamanho da caixa de texto apenas para baixo */
+}
+
+/* Efeito ao clicar no campo de texto */
+.feedback-card select:focus,
+.feedback-card textarea:focus {
+    outline: none;
+    border-color: #0066cc;
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+}
+
+/* =======================================
+   BOTÕES PERSONALIZADOS
+   ======================================= */
+.btn-aluno,
+.btn-professor {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    align-self: flex-start; /* Evita que o botão estique para ocupar a tela toda */
+    margin-top: 10px;
+}
+
+/* Azul para o Aluno */
+.btn-aluno {
+    background-color: #0066cc; 
+}
+.btn-aluno:hover {
+    background-color: #0052a3;
+    transform: translateY(-2px);
+}
+
+/* Verde/Diferenciado para o Professor */
+.btn-professor {
+    background-color: #28a745; 
+}
+.btn-professor:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+}
+
+/* =======================================
+   LISTA DE MENSAGENS (CAIXAS DE FEEDBACK)
+   ======================================= */
+.feedback-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.msg-item {
+    border-radius: 8px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+/* Mensagem vinda do Professor (fundo levemente verde) */
+.msg-professor {
+    border-left: 5px solid #28a745; 
+    background-color: #f4fff6;
+}
+
+/* Mensagem vinda do Aluno (fundo levemente azul) */
+.msg-aluno {
+    border-left: 5px solid #0066cc; 
+    background-color: #f0f7ff;
+}
+
+.msg-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.msg-user {
+    font-weight: bold;
+    color: #222;
+    font-size: 1.05rem;
+}
+
+.msg-date {
+    font-size: 0.85rem;
+    color: #666;
+    background: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 12px;
+}
+
+.msg-content {
+    color: #444;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Garante que os "Enters" que o usuário der no texto apareçam na tela */
+}
