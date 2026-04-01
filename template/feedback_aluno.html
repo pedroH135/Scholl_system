@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Feedback do Aluno</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header><h1>Central de Feedback - Aluno</h1></header>
+    
+    <main class="feedback-container">
+        <section class="feedback-card">
+            <h2>👨‍🏫 Avaliar Professor</h2>
+            <form method="POST">
+                <label>Selecione o Professor:</label>
+                <select name="professor_id" required>
+                    <option value="">-- Escolha um professor --</option>
+                    {% for p in professores %}
+                    <option value="{{ p[0] }}">{{ p[1] }}</option>
+                    {% endfor %}
+                </select>
+                
+                <label>Sua Mensagem:</label>
+                <textarea name="mensagem" rows="4" placeholder="Como está sendo a didática e o conteúdo?" required></textarea>
+                
+                <button type="submit" class="btn-aluno">Enviar Avaliação</button>
+            </form>
+        </section>
+
+        <section class="feedback-card">
+            <h2>📩 Comentários dos Professores</h2>
+            <div class="feedback-list">
+                {% for r in recebidos %}
+                <div class="msg-item msg-professor">
+                    <div class="msg-header">
+                        <span class="msg-user">Prof. {{ r[0] }}</span>
+                        <span class="msg-date">{{ r[2] }}</span>
+                    </div>
+                    <div class="msg-content">{{ r[1] }}</div>
+                </div>
+                {% else %}
+                <p style="color: #999;">Nenhum feedback recebido ainda.</p>
+                {% endfor %}
+            </div>
+        </section>
+        
+        <div style="text-align: center;"><a href="/dashboard_aluno">← Voltar ao Início</a></div>
+    </main>
+</body>
+</html>
