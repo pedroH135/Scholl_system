@@ -571,9 +571,89 @@ def presenca():
     return render_template("presenca.html")
 
 
-@app.route('/feedback')
-def feedback():
-    return render_template("feedback.html")
+@app.route('/feedback_aluno', methods=['GET', 'POST'])
+def feedback_aluno():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    # Pega um aluno (temporário - igual ao seu código atual)
+    cursor.execute("SELECT id, ano_letivo FROM usuarios WHERE tipo='aluno' LIMIT 1")
+    aluno = cursor.fetchone()
+    
+    if not aluno:
+        return "Nenhum aluno encontrado no sistema"
+        
+    uid = aluno[0]
+    ano = aluno[1]
+
+    if request.method == 'POST':
+        dest_id = request.form.get("professor_id")
+        msg = request.form.get("mensagem")
+        cursor.execute("INSERT INTO feedbacks (remetente_id, destinatario_id, mensagem) VALUES (?, ?, ?)", (uid, dest_id, msg))
+        conn.commit()
+
+    # Professores que dão aula para o ano deste aluno
+    cursor.execute("""
+        SELECT DISTINCT u.id, u.nome 
+        FROM usuarios u
+        JOIN professor_materias pm ON u.id = pm.professor_id
+        WHERE pm.ano_letivo = ?
+    """, (ano,))
+    professores = cursor.fetchall()
+
+    # Feedbacks que este aluno recebeu dos professores
+    cursor.execute("""
+        SELECT u.nome, f.mensagem, f.data_envio 
+        FROM feedbacks f
+        JOIN usuarios u ON f.remetente_id = u.id
+        WHERE f.destinatario_id = ?
+    """, (uid,))
+    recebidos = cursor.fetchall()
+
+    conn.close()
+    return render_template("feedback_aluno.html", professores=professores, recebidos=recebidos)
+
+
+@app.route('/feedback_professor', methods=['GET', 'POST'])
+def feedback_professor():
+    conn = conectar()
+    cursor = conn.cursor()
+
+    # Pega um professor (temporário - igual à sua rota /alunos)
+    cursor.execute("SELECT id FROM usuarios WHERE tipo='professor' LIMIT 1")
+    professor = cursor.fetchone()
+    
+    if not professor:
+        return "Nenhum professor encontrado no sistema"
+        
+    uid = professor[0]
+
+    if request.method == 'POST':
+        dest_id = request.form.get("aluno_id")
+        msg = request.form.get("mensagem")
+        cursor.execute("INSERT INTO feedbacks (remetente_id, destinatario_id, mensagem) VALUES (?, ?, ?)", (uid, dest_id, msg))
+        conn.commit()
+
+    # Alunos das turmas deste professor
+    cursor.execute("""
+        SELECT DISTINCT u.id, u.nome, u.ano_letivo
+        FROM usuarios u
+        JOIN professor_materias pm ON u.ano_letivo = pm.ano_letivo
+        WHERE pm.professor_id = ? AND u.tipo = 'aluno'
+    """, (uid,))
+    alunos = cursor.fetchall()
+
+    # Feedbacks que os alunos enviaram sobre este professor
+    cursor.execute("""
+        SELECT u.nome, f.mensagem, f.data_envio 
+        FROM feedbacks f
+        JOIN usuarios u ON f.remetente_id = u.id
+        WHERE f.destinatario_id = ?
+    """, (uid,))
+    recebidos = cursor.fetchall()
+
+    conn.close()
+    return render_template("feedback_professor.html", alunos=alunos, recebidos=recebidos)
 
 
 @app.route('/desempenho')
