@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Materiais Acadêmicos - Professor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header><h1>Gerenciar Materiais Acadêmicos</h1></header>
+    <main>
+        <section class="feedback-card">
+            <h2>📤 Postar Novo Material</h2>
+            <form method="POST" enctype="multipart/form-data">
+                <label>Título:</label>
+                <input type="text" name="titulo" required placeholder="Ex: Slide Aula 05">
+
+                <label>Turma / Matéria:</label>
+                <select name="turma_selecionada" required>
+                    <option value="">-- Selecione a Turma --</option>
+                    {% for t in turmas %}
+                        <option value="{{ t[0] }}-{{ t[2] }}">{{ t[2] }}º Ano - {{ t[1] }}</option>
+                    {% endfor %}
+                </select>
+
+                <label>Categoria:</label>
+                <select name="categoria" required>
+                    <option value="Slide">Slide</option>
+                    <option value="Apostila">Apostila/PDF</option>
+                    <option value="Vídeo">Vídeo Externo</option>
+                    <option value="Atividade">Atividade</option>
+                </select>
+
+                <label>Arquivo (Opcional se for link):</label>
+                <input type="file" name="arquivo">
+
+                <label>Link Externo (Opcional, ex: YouTube/Drive):</label>
+                <input type="url" name="link_externo" placeholder="https://...">
+
+                <button type="submit" class="btn-professor" style="margin-top: 15px;">Postar Material</button>
+            </form>
+        </section>
+
+        <section class="feedback-card" style="margin-top: 20px;">
+            <h2>📁 Seus Envios Recentes</h2>
+            <ul>
+                {% for arq in arquivos %}
+                <li style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+                    <strong>{{ arq[0] }}</strong> ({{ arq[1] }}) - {{ arq[5] }} para o {{ arq[4] }}º Ano <br>
+                    <small style="color: gray;">Postado em: {{ arq[6] }}</small><br>
+                    
+                    {% if arq[2] %} <a href="{{ url_for('static', filename='uploads/' ~ arq[2]) }}" target="_blank">📄 Baixar Arquivo</a>
+                    {% endif %}
+                    
+                    {% if arq[3] %} <a href="{{ arq[3] }}" target="_blank" style="margin-left: 10px;">🔗 Acessar Link</a>
+                    {% endif %}
+                </li>
+                {% else %}
+                <p>Nenhum material postado ainda.</p>
+                {% endfor %}
+            </ul>
+        </section>
+        
+        <br>
+        <div style="text-align: center;"><a href="/dashboard_professor">← Voltar</a></div>
+    </main>
+</body>
+</html>

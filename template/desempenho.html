@@ -161,30 +161,43 @@
 </div>
 
 <script>
+    // Define os rótulos do eixo X dos gráficos (ex: bimestres ou etapas de avaliação)
     const labels = ["AB1.1", "AB1.2", "AB2.1", "AB2.2"];
+    
+    // Recebe os dados do backend (provavelmente usando um template engine como Jinja/Flask) 
+    // e os converte com segurança em um objeto JavaScript
     const dados = JSON.parse('{{ dados | tojson | safe }}');
     
+    // Variáveis globais para armazenar as instâncias dos gráficos do Chart.js.
+    // Isso é necessário para podermos "destruí-los" antes de criar novos, evitando sobreposição.
     let graficoTurma;
     let graficoAluno;
 
+    // Função principal que atualiza o gráfico da turma e a lista de alunos
     function atualizarGraficos() {
+        // Captura os valores atuais selecionados nos elementos <select> da página HTML
         const turma = document.getElementById("turmaSelect").value;
         const materia = document.getElementById("materiaSelect").value;
         const selectAluno = document.getElementById("alunoSelect");
         
+        // Limpa o dropdown de alunos para evitar duplicação ao trocar de turma/matéria
         selectAluno.innerHTML = "";
 
-        // Verifica se existem dados para a combinação selecionada 
+        // Validação de segurança: Verifica se a combinação de turma e matéria possui dados
         if (!dados[turma] || !dados[turma][materia] || Object.keys(dados[turma][materia]).length === 0) {
+            // Se não houver dados, destrói os gráficos existentes
             if (graficoTurma) graficoTurma.destroy();
             if (graficoAluno) graficoAluno.destroy();
+            // Mostra uma mensagem padrão no dropdown de alunos e encerra a função
             selectAluno.innerHTML = "<option>Sem dados</option>";
             return;
         }
 
+        // Extrai os dados específicos da turma e matéria selecionadas
         const alunosData = dados[turma][materia];
-        const nomesAlunos = Object.keys(alunosData);
+        const nomesAlunos = Object.keys(alunosData); // Cria um array apenas com os nomes dos alunos
 
+        // Preenche o dropdown (selectAluno) dinamicamente com os nomes encontrados
         nomesAlunos.forEach(nome => {
             let op = document.createElement("option");
             op.value = nome;
@@ -192,63 +205,82 @@
             selectAluno.appendChild(op);
         });
 
-        // Cálculo da Média da Turma 
-        let medias = [0, 0, 0, 0];
+        // --- Início do Cálculo da Média da Turma ---
+        let medias = [0, 0, 0, 0]; // Array inicial para somar as notas das 4 avaliações
+        
+        // Percorre todos os alunos para somar as notas
         nomesAlunos.forEach(nome => {
             const notas = alunosData[nome];
             for (let i = 0; i < 4; i++) {
-                medias[i] += (notas[i] || 0);
+                // Soma a nota atual. O '|| 0' previne erros caso alguma nota falte (seja null/undefined)
+                medias[i] += (notas[i] || 0); 
             }
         });
 
+        // Divide a soma total pelo número de alunos para obter a média, fixando em 1 casa decimal
         medias = medias.map(m => (m / nomesAlunos.length).toFixed(1));
+        // --- Fim do Cálculo ---
 
+        // Destrói o gráfico de turma antigo (se existir) para liberar a tag <canvas>
         if (graficoTurma) graficoTurma.destroy();
+        
+        // Cria um novo gráfico de Linha (line) para mostrar a evolução da média da turma
         graficoTurma = new Chart(document.getElementById("graficoTurma"), {
             type: "line",
             data: {
                 labels: labels,
                 datasets: [{
                     label: "Média da Turma",
-                    data: medias,
-                    borderColor: "#3498db",
-                    backgroundColor: "rgba(52, 152, 219, 0.1)",
-                    fill: true,
-                    tension: 0.3
+                    data: medias, // Passa o array de médias calculado acima
+                    borderColor: "#3498db", // Cor da linha (azul)
+                    backgroundColor: "rgba(52, 152, 219, 0.1)", // Cor de preenchimento abaixo da linha
+                    fill: true, // Habilita o preenchimento de fundo
+                    tension: 0.3 // Suaviza as curvas da linha (0 é reto, valores maiores deixam curvo)
                 }]
             },
-            options: { scales: { y: { beginAtZero: true, max: 10 } } }
+            // Configura o eixo Y para começar do 0 e ter valor máximo de 10
+            options: { scales: { y: { beginAtZero: true, max: 10 } } } 
         });
 
+        // Como a lista de alunos foi atualizada, chama a função para renderizar o gráfico do primeiro aluno
         atualizarGraficoAluno();
     }
 
+    // Função responsável por atualizar exclusivamente o gráfico individual do aluno selecionado
     function atualizarGraficoAluno() {
+        // Captura os valores selecionados
         const turma = document.getElementById("turmaSelect").value;
         const materia = document.getElementById("materiaSelect").value;
         const aluno = document.getElementById("alunoSelect").value;
 
+        // Validação de segurança dupla (impede erros se a função for chamada em momento indevido)
         if (!dados[turma] || !dados[turma][materia] || !dados[turma][materia][aluno]) return;
 
+        // Pega apenas as notas do aluno selecionado
         const notas = dados[turma][materia][aluno];
 
+        // Destrói o gráfico de aluno antigo (se existir)
         if (graficoAluno) graficoAluno.destroy();
+        
+        // Cria um novo gráfico de Barras (bar) para o aluno
         graficoAluno = new Chart(document.getElementById("graficoAluno"), {
             type: "bar",
             data: {
                 labels: labels,
                 datasets: [{
                     label: `Notas de ${aluno}`,
-                    data: notas,
-                    backgroundColor: "#2ecc71",
-                    borderRadius: 5
+                    data: notas, // Array direto de notas do aluno
+                    backgroundColor: "#2ecc71", // Cor das barras (verde)
+                    borderRadius: 5 // Arredonda os cantos superiores das barras
                 }]
             },
+            // Configura o eixo Y mantendo o padrão de 0 a 10
             options: { scales: { y: { beginAtZero: true, max: 10 } } }
         });
     }
 
-    // Inicializa os gráficos ao carregar
+    // Event listener que dispara a função atualizarGraficos assim que a janela (página) termina de carregar.
+    // Isso garante que os gráficos não fiquem em branco quando o usuário abre a tela pela primeira vez.
     window.onload = atualizarGraficos;
 </script>
 

@@ -1,39 +1,69 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Presença</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <title>Registro de Presença - Professor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
+    <header><h1>Controle de Frequência</h1></header>
+    <main class="feedback-container">
+        
+        <section class="feedback-card">
+            <h2>📝 Registrar Nova Presença/Falta</h2>
+            <form method="POST">
+                <label>Aluno:</label>
+                <select name="aluno_id" required>
+                    <option value="">-- Selecione o Aluno --</option>
+                    {% for a in alunos %}
+                        <option value="{{ a[0] }}">{{ a[1] }} ({{ a[2] }}º Ano)</option>
+                    {% endfor %}
+                </select>
 
-<header>
-<h1>Registro de Presença</h1>
-</header>
+                <label>Turma / Disciplina:</label>
+                <select name="turma_selecionada" required>
+                    <option value="">-- Selecione a Matéria --</option>
+                    {% for t in turmas %}
+                        <option value="{{ t[0] }}-{{ t[2] }}">{{ t[2] }}º Ano - {{ t[1] }}</option>
+                    {% endfor %}
+                </select>
 
-<main>
+                <label>Data:</label>
+                <input type="date" name="data" required>
 
-<form>
+                <label>Status:</label>
+                <select name="status" required>
+                    <option value="Presente">🟢 Presente</option>
+                    <option value="Faltou">🔴 Faltou</option>
+                </select>
 
-<label>Aluno</label>
-<input type="text">
+                <button type="submit" class="btn-professor" style="margin-top: 15px;">Salvar Registro</button>
+            </form>
+        </section>
 
-<label>Data</label>
-<input type="date">
+        <section class="feedback-card" style="margin-top: 20px;">
+            <h2>📋 Últimos Lançamentos</h2>
+            <ul>
+                {% for h in historico %}
+                <li style="margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                    <strong>{{ h[0] }}</strong> - {{ h[1] }} ({{ h[2] }}) <br>
+                    Status: 
+                    {% if h[3] == 'Presente' %}
+                        <span style="color: green; font-weight: bold;">{{ h[3] }}</span>
+                    {% else %}
+                        <span style="color: red; font-weight: bold;">{{ h[3] }}</span>
+                    {% endif %}
+                </li>
+                {% else %}
+                <p>Nenhum lançamento recente encontrado.</p>
+                {% endfor %}
+            </ul>
+        </section>
 
-<label>Status</label>
-
-<select>
-<option>Presente</option>
-<option>Falta</option>
-</select>
-
-<button>Registrar</button>
-
-</form>
-
-</main>
-
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/dashboard_professor">← Voltar ao Início</a>
+        </div>
+        
+    </main>
 </body>
 </html>
