@@ -1,5 +1,11 @@
 from flask import Flask, render_template, request, redirect, session
 import sqlite3
+from models.aluno import Aluno
+from models.professor import Professor
+from models.notas import Nota
+from models.visualizador_desempenho import DesempenhoAluno, DesempenhoProfessor
+import os
+import glob
 
 app = Flask(__name__)
 
@@ -117,38 +123,54 @@ def login():
 
     if request.method == "POST":
 
+        # Captura os dados preenchidos no formulário
         cpf = request.form["cpf"]
         senha = request.form["senha"]
 
         conn = conectar()
         cursor = conn.cursor()
 
+        # Busca no banco de dados se existe um usuário com este CPF e senha
         cursor.execute("""
         SELECT * FROM usuarios
         WHERE cpf=? AND senha=?
         """,(cpf,senha))
 
-        usuario = cursor.fetchone()
+        usuario_db = cursor.fetchone()
 
         conn.close()
 
-        if usuario:
+        # Verifica se o usuário foi encontrado no banco
+        # Verifica se o usuário foi encontrado no banco
+        if usuario_db:
+            
+            # 1. Salva na sessão
+            session["usuario_id"] = usuario_db[0]
+            session["tipo"] = usuario_db[5]
 
-            tipo = usuario[5]
+            # 2. INSTANCIA O OBJETO (Transforma os dados do banco em POO)
+            if usuario_db[5] == "aluno":
+                usuario_logado = Aluno(
+                    usuario_db[0],  # id
+                    usuario_db[1],  # nome
+                    usuario_db[3],  # email
+                    usuario_db[6]   # ano_letivo
+                )
+            elif usuario_db[5] == "professor":
+                usuario_logado = Professor(
+                    usuario_db[0],  # id
+                    usuario_db[1],  # nome
+                    usuario_db[3]   # email
+                )
 
-            if tipo == "aluno":
-
-                # salva ID do aluno na sessão
-                session["usuario_id"] = usuario[0]
-
-                return redirect("/dashboard_aluno")
-
-            elif tipo == "professor":
-                return redirect("/dashboard_professor")
+            # 3. POLIMORFISMO EM AÇÃO
+            # Agora o Python sabe quem é usuario_logado e vai chamar a URL certa!
+            return redirect(usuario_logado.get_dashboard_url())
 
         else:
             return "CPF ou senha incorretos"
 
+    # Se o método for GET, apenas renderiza a página de login
     return render_template("login.html")
 
 
@@ -277,7 +299,16 @@ def dashboard_aluno():
 
     conn.close()
 
-    foto = "/static/img/aluno.jpg"
+    # --- NOVIDADE: Busca a foto real na pasta ---
+    padrao = f"static/img/aluno_{aluno_id}.*"
+    fotos_encontradas = glob.glob(padrao)
+    
+    if fotos_encontradas:
+        # Pega o caminho encontrado e ajusta para o navegador entender
+        foto = "/" + fotos_encontradas[0].replace('\\', '/') 
+    else:
+        foto = "/static/img/aluno.jpg" # Foto padrão caso não tenha foto personalizada
+    # --------------------------------------------
 
     return render_template(
         "dashboard_aluno.html",
@@ -339,8 +370,15 @@ def dashboard_professor():
 
     conn.close()
 
-    # foto padrão
-    foto = "/static/img/professor.png"
+    # --- NOVIDADE: Busca a foto real na pasta ---
+    padrao = f"static/img/professor_{professor_id}.*"
+    fotos_encontradas = glob.glob(padrao)
+    
+    if fotos_encontradas:
+        foto = "/" + fotos_encontradas[0].replace('\\', '/')
+    else:
+        foto = "/static/img/professor.png" # Foto padrão
+    # --------------------------------------------
 
     return render_template(
         "dashboard_professor.html",
@@ -365,9 +403,16 @@ def atualizar_nota():
     aluno_id = request.form.get("aluno_id")
     materia_nome = request.form.get("materia")
     ano = request.form.get("ano")
-    campo = request.form.get("campo")  # ab1_1, ab1_2...
+    campo = request.form.get("campo")
     valor = request.form.get("valor")
     valor = float(valor) if valor and valor != "-" else None
+
+    nota = Nota()
+
+    try:
+        nota.atualizar(campo, valor)
+    except ValueError as e:
+        return jsonify({"status": "erro", "msg": str(e)})
 
     try:
         conn = conectar()
@@ -394,19 +439,22 @@ def atualizar_nota():
 
         if existe:
             # UPDATE dinâmico
+            valor_validado = nota.get_valor(campo)
             query = f"""
             UPDATE notas
             SET {campo} = ?
             WHERE aluno_id=? AND materia_id=? AND ano_letivo=?
             """
-            cursor.execute(query, (valor, aluno_id, materia_id, ano))
+            cursor.execute(query, (valor_validado, aluno_id, materia_id, ano))
 
         else:
             # INSERT se não existir ainda
+            valor_validado = nota.get_valor(campo)
+
             cursor.execute(f"""
             INSERT INTO notas (aluno_id, materia_id, ano_letivo, {campo})
             VALUES (?, ?, ?, ?)
-            """, (aluno_id, materia_id, ano, valor))
+            """, (aluno_id, materia_id, ano, valor_validado))
 
         conn.commit()
         conn.close()
@@ -558,153 +606,217 @@ def minhas_notas():
 
     return render_template("minhas_notas.html", materias=materias)
 
-@app.route('/materiais')
+@app.route("/materiais", methods=["GET", "POST"])
 def materiais():
-    return render_template("materiais.html")
+    if "usuario_id" not in session:
+        return redirect("/")
+
+    conn = conectar()
+    cursor = conn.cursor()
+    
+    usuario_id = session["usuario_id"]
+    cursor.execute("SELECT * FROM usuarios WHERE id=?", (usuario_id,))
+    u_db = cursor.fetchone()
+    
+    # Instancia o objeto polimórfico
+    if u_db[5] == "aluno":
+        usuario_logado = Aluno(u_db[0], u_db[1], u_db[3], u_db[6])
+    else:
+        usuario_logado = Professor(u_db[0], u_db[1], u_db[3])
+
+    # Se for POST (Professor enviando material)
+    if request.method == "POST" and u_db[5] == "professor":
+        titulo = request.form["titulo"]
+        categoria = request.form["categoria"]
+        link_externo = request.form.get("link_externo", "")
+        
+        # O value do select trará "materia_id-ano_letivo" juntos
+        turma_selecionada = request.form["turma_selecionada"] 
+        materia_id, ano_letivo = turma_selecionada.split("-")
+
+        arquivo = request.files.get("arquivo")
+        nome_arquivo = ""
+
+        # Salva o arquivo na pasta se o professor tiver enviado um
+        if arquivo and arquivo.filename:
+            pasta = "static/uploads"
+            os.makedirs(pasta, exist_ok=True)
+            nome_arquivo = f"prof_{usuario_logado.id}_{arquivo.filename.replace(' ', '_')}"
+            caminho_completo = os.path.join(pasta, nome_arquivo)
+            arquivo.save(caminho_completo)
+
+        # Salva no seu banco de dados
+        cursor.execute("""
+            INSERT INTO materiais (titulo, categoria, arquivo, link_externo, materia_id, ano_letivo, professor_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (titulo, categoria, nome_arquivo, link_externo, materia_id, ano_letivo, usuario_logado.id))
+        conn.commit()
+        return redirect("/materiais")
+
+    # POLIMORFISMO: Pega os dados e renderiza
+    dados = usuario_logado.obter_dados_materiais(cursor)
+    conn.close()
+
+    return render_template(dados["template"], **dados["contexto"])
 
 @app.route('/calendario')
 def calendario():
     return render_template("calendario.html")
 
-@app.route('/presenca')
+@app.route("/presenca", methods=["GET", "POST"])
 def presenca():
-    return render_template("presenca.html")
-
-
-@app.route('/feedback_aluno', methods=['GET', 'POST'])
-def feedback_aluno():
+    # Iniciamos a conexão primeiro para poder buscar o usuário
     conn = conectar()
     cursor = conn.cursor()
 
-    # Pega um aluno (temporário - igual ao seu código atual)
-    cursor.execute("SELECT id, ano_letivo FROM usuarios WHERE tipo='aluno' LIMIT 1")
-    aluno = cursor.fetchone()
-    
-    if not aluno:
-        return "Nenhum aluno encontrado no sistema"
+    # 1. Pegar usuário (Simulação de sessão buscando o primeiro professor do banco)
+    cursor.execute("SELECT id, nome, email FROM usuarios WHERE tipo='professor' LIMIT 1")
+    dados_prof = cursor.fetchone()
+
+    if not dados_prof:
+        return "Erro: Nenhum professor encontrado no sistema para simular o acesso."
+
+    # Criamos o objeto Professor usando os dados do banco
+    usuario = Professor(id=dados_prof[0], nome=dados_prof[1], email=dados_prof[2])
+
+    # 2. BLOQUEIO: Se não for professor, não entra
+    if not usuario.eh_professor():
+        conn.close()
+        return redirect(usuario.get_dashboard_url())
+
+    # 3. Se for POST (Professor salvando presença)
+    if request.method == "POST":
+        aluno_id = request.form["aluno_id"]
+        # O campo turma_selecionada vem como "id-ano" (ex: "1-9")
+        turma_info = request.form["turma_selecionada"].split("-")
+        materia_id = turma_info[0]
+        data = request.form["data"]
+        status = request.form["status"]
+
+        cursor.execute("""
+            INSERT INTO presencas (aluno_id, materia_id, data, status)
+            VALUES (?, ?, ?, ?)
+        """, (aluno_id, materia_id, data, status))
         
-    uid = aluno[0]
-    ano = aluno[1]
-
-    if request.method == 'POST':
-        dest_id = request.form.get("professor_id")
-        msg = request.form.get("mensagem")
-        cursor.execute("INSERT INTO feedbacks (remetente_id, destinatario_id, mensagem) VALUES (?, ?, ?)", (uid, dest_id, msg))
         conn.commit()
+        conn.close()
+        return redirect("/presenca")
 
-    # Professores que dão aula para o ano deste aluno
-    cursor.execute("""
-        SELECT DISTINCT u.id, u.nome 
-        FROM usuarios u
-        JOIN professor_materias pm ON u.id = pm.professor_id
-        WHERE pm.ano_letivo = ?
-    """, (ano,))
-    professores = cursor.fetchall()
-
-    # Feedbacks que este aluno recebeu dos professores
-    cursor.execute("""
-        SELECT u.nome, f.mensagem, f.data_envio 
-        FROM feedbacks f
-        JOIN usuarios u ON f.remetente_id = u.id
-        WHERE f.destinatario_id = ?
-    """, (uid,))
-    recebidos = cursor.fetchall()
-
+    # 4. Se for GET (Mostrar página de registro do Professor)
+    # A função obter_dados_presenca já está definida dentro da sua classe Professor
+    dados = usuario.obter_dados_presenca(cursor)
+    
+    # Extraímos os dados e fechamos a conexão antes de renderizar
+    template = dados["template"]
+    contexto = dados["contexto"]
     conn.close()
-    return render_template("feedback_aluno.html", professores=professores, recebidos=recebidos)
+
+    return render_template(template, **contexto)
 
 
-@app.route('/feedback_professor', methods=['GET', 'POST'])
-def feedback_professor():
+@app.route("/feedback", methods=["GET", "POST"])
+def feedback():
+    if "usuario_id" not in session:
+        return redirect("/login")
+
     conn = conectar()
     cursor = conn.cursor()
-
-    # Pega um professor (temporário - igual à sua rota /alunos)
-    cursor.execute("SELECT id FROM usuarios WHERE tipo='professor' LIMIT 1")
-    professor = cursor.fetchone()
     
-    if not professor:
-        return "Nenhum professor encontrado no sistema"
+    # 1. Recupera e instancia o usuário (Lógica que você já tem no Login)
+    usuario_id = session["usuario_id"]
+    cursor.execute("SELECT * FROM usuarios WHERE id=?", (usuario_id,))
+    u_db = cursor.fetchone()
+    
+    if u_db[5] == "aluno":
+        usuario_logado = Aluno(u_db[0], u_db[1], u_db[3], u_db[6])
+    else:
+        usuario_logado = Professor(u_db[0], u_db[1], u_db[3])
+
+    # 2. Se for envio de mensagem (POST)
+    if request.method == "POST":
+        # Pega o ID do destinatário (seja professor_id ou aluno_id do formulário)
+        destinatario_id = request.form.get("professor_id") or request.form.get("aluno_id")
+        mensagem = request.form["mensagem"]
         
-    uid = professor[0]
-
-    if request.method == 'POST':
-        dest_id = request.form.get("aluno_id")
-        msg = request.form.get("mensagem")
-        cursor.execute("INSERT INTO feedbacks (remetente_id, destinatario_id, mensagem) VALUES (?, ?, ?)", (uid, dest_id, msg))
+        cursor.execute("""
+            INSERT INTO feedbacks (remetente_id, destinatario_id, mensagem) 
+            VALUES (?, ?, ?)
+        """, (usuario_logado.id, destinatario_id, mensagem))
         conn.commit()
+        return redirect("/feedback")
 
-    # Alunos das turmas deste professor
-    cursor.execute("""
-        SELECT DISTINCT u.id, u.nome, u.ano_letivo
-        FROM usuarios u
-        JOIN professor_materias pm ON u.ano_letivo = pm.ano_letivo
-        WHERE pm.professor_id = ? AND u.tipo = 'aluno'
-    """, (uid,))
-    alunos = cursor.fetchall()
-
-    # Feedbacks que os alunos enviaram sobre este professor
-    cursor.execute("""
-        SELECT u.nome, f.mensagem, f.data_envio 
-        FROM feedbacks f
-        JOIN usuarios u ON f.remetente_id = u.id
-        WHERE f.destinatario_id = ?
-    """, (uid,))
-    recebidos = cursor.fetchall()
-
+    # 3. POLIMORFISMO: Uma única chamada para buscar os dados
+    # O Python decidirá sozinho se chama a versão do Aluno ou do Professor
+    dados = usuario_logado.obter_dados_feedback(cursor)
+    
     conn.close()
-    return render_template("feedback_professor.html", alunos=alunos, recebidos=recebidos)
 
+    # Renderiza o template correto com o contexto correto
+    return render_template(dados["template"], **dados["contexto"])
 
-@app.route('/desempenho')
+@app.route("/desempenho")
 def desempenho():
     conn = conectar()
     cursor = conn.cursor()
 
-    # 1. Pegar anos letivos (que funcionam como turmas no seu banco)
+    # -----------------------------
+    # Professor (objeto)
+    # -----------------------------
+    cursor.execute("SELECT id, nome, email FROM usuarios WHERE tipo='professor' LIMIT 1")
+    prof_db = cursor.fetchone()
+    
+    if not prof_db:
+        return "Nenhum professor encontrado no sistema."
+
+    prof_obj = Professor(prof_db[0], prof_db[1], prof_db[2])
+
+    # -----------------------------
+    # Usa classe abstrata (POO)
+    # -----------------------------
+    visualizador = DesempenhoProfessor(prof_obj)
+    dados_brutos = visualizador.consultar_dados(cursor)
+
+    # -----------------------------
+    # Turmas e matérias (ESSENCIAL)
+    # -----------------------------
     cursor.execute("SELECT DISTINCT ano_letivo FROM usuarios WHERE tipo='aluno'")
     turmas = [str(t[0]) for t in cursor.fetchall() if t[0] is not None]
 
-    # 2. Pegar matérias
     cursor.execute("SELECT nome FROM materias")
     materias = [m[0] for m in cursor.fetchall()]
 
-    dados = {}
+    # -----------------------------
+    # Estrutura dos dados
+    # -----------------------------
+    dados_formatados = {}
 
-    for turma in turmas:
-        dados[turma] = {}
-        for materia in materias:
-            # Busca notas joinando usuarios(alunos) e materias
-            cursor.execute("""
-                SELECT u.nome, n.ab1_1, n.ab1_2, n.ab2_1, n.ab2_2
-                FROM notas n
-                JOIN usuarios u ON n.aluno_id = u.id
-                JOIN materias m ON n.materia_id = m.id
-                WHERE u.ano_letivo = ? AND m.nome = ?
-            """, (turma, materia))
-            
-            resultados = cursor.fetchall()
-            alunos_dict = {}
+    if dados_brutos:
+        for aluno, ano, materia, ab1_1, ab1_2, ab2_1, ab2_2 in dados_brutos:
 
-            for r in resultados:
-                nome = r[0]
-                # Converte None para 0 para o gráfico não quebrar
-                notas = [r[1] or 0, r[2] or 0, r[3] or 0, r[4] or 0]
-                alunos_dict[nome] = notas
+            turma = str(ano)
 
-            # Só adiciona se houver alunos com nota nessa matéria/turma
-            if alunos_dict:
-                dados[turma][materia] = alunos_dict
-            else:
-                # Evita erro de undefined no JS do HTML
-                dados[turma][materia] = {}
+            if turma not in dados_formatados:
+                dados_formatados[turma] = {}
+
+            if materia not in dados_formatados[turma]:
+                dados_formatados[turma][materia] = {}
+
+            notas = [n if n is not None else 0 for n in (ab1_1, ab1_2, ab2_1, ab2_2)]
+
+            dados_formatados[turma][materia][aluno] = notas
 
     conn.close()
-    return render_template("desempenho.html", turmas=turmas, materias=materias, dados=dados)
 
-@app.route('/meu_desempenho')
+    return render_template(
+        "desempenho.html",
+        dados=dados_formatados,
+        turmas=turmas,
+        materias=materias
+    )
+
+@app.route("/meu_desempenho")
 def meu_desempenho():
-    # Verifica se o aluno está logado (usando a chave definida no login)
+
     aluno_id = session.get("usuario_id")
     if not aluno_id:
         return redirect("/login")
@@ -712,41 +824,43 @@ def meu_desempenho():
     conn = conectar()
     cursor = conn.cursor()
 
-    # 1. Pegar dados básicos do aluno
-    cursor.execute("SELECT nome, ano_letivo FROM usuarios WHERE id = ?", (aluno_id,))
-    aluno = cursor.fetchone()
-    
-    if not aluno:
-        return "Aluno não encontrado"
-    
-    nome_aluno = aluno[0]
-    ano_letivo = aluno[1]
-
-    # 2. Buscar notas por matéria
-    # Fazemos um JOIN com a tabela de materias para pegar os nomes
+    # 🔥 CORREÇÃO: agora pega o ano_letivo também
     cursor.execute("""
-        SELECT m.nome, n.ab1_1, n.ab1_2, n.ab2_1, n.ab2_2
-        FROM notas n
-        JOIN materias m ON n.materia_id = m.id
-        WHERE n.aluno_id = ? AND n.ano_letivo = ?
-    """, (aluno_id, ano_letivo))
-
-    resultados = cursor.fetchall()
+        SELECT id, nome, email, ano_letivo
+        FROM usuarios
+        WHERE id=?
+    """, (aluno_id,))
     
-    dados_notas = {}
-    for r in resultados:
-        materia_nome = r[0]
-        # Converte None para 0 para o gráfico
-        notas = [r[1] or 0, r[2] or 0, r[3] or 0, r[4] or 0]
-        dados_notas[materia_nome] = notas
+    aluno_db = cursor.fetchone()
+
+    if not aluno_db:
+        return "Aluno não encontrado"
+
+    # 🔥 CORREÇÃO: passa o ano corretamente
+    aluno_obj = Aluno(
+        aluno_db[0],  # id
+        aluno_db[1],  # nome
+        aluno_db[2],  # email
+        aluno_db[3]   # ano
+    )
+
+    # 🔥 POLIMORFISMO
+    visualizador = DesempenhoAluno(aluno_obj)
+    dados_brutos = visualizador.consultar_dados(cursor)
+
+    dados_formatados = {}
+
+    for materia, ab1_1, ab1_2, ab2_1, ab2_2 in dados_brutos:
+        notas = [n if n is not None else 0 for n in (ab1_1, ab1_2, ab2_1, ab2_2)]
+        dados_formatados[materia] = notas
 
     conn.close()
 
     return render_template(
         "meu_desempenho.html",
-        nome=nome_aluno,
-        ano=ano_letivo,
-        dados_notas=dados_notas
+        dados_notas=dados_formatados,
+        nome=aluno_obj.nome,   # 🔥 necessário para o HTML
+        ano=aluno_obj.ano      # 🔥 necessário para o HTML
     )
 
 # OUTRAS FUNCIONALIDADES
@@ -755,34 +869,32 @@ import os
 
 @app.route("/editar_foto", methods=["GET","POST"])
 def editar_foto():
-
     if request.method == "POST":
-
         foto = request.files["foto"]
+        
+        if foto.filename == '':
+            return "Nenhum arquivo selecionado"
 
         pasta = "static/img"
-
-        # garante que a pasta existe
         os.makedirs(pasta, exist_ok=True)
 
-        aluno_id = session.get("aluno_id")
-        professor_id = session.get("professor_id")
+        # Pega as informações de quem está logado
+        usuario_id = session.get("usuario_id")
+        tipo = session.get("tipo") # 'aluno' ou 'professor'
 
-        # define nome da foto dependendo do usuário
-        if aluno_id:
-            nome_arquivo = f"aluno_{aluno_id}.jpg"
+        if not usuario_id:
+            return redirect("/login")
 
-        elif professor_id:
-            nome_arquivo = f"professor_{professor_id}.jpg"
+        # Pega a extensão original do arquivo (ex: .png, .jpg)
+        extensao = os.path.splitext(foto.filename)[1]
 
-        else:
-            nome_arquivo = "usuario.jpg"
-
+        # Nomeia o arquivo corretamente: ex "aluno_1.jpg" ou "professor_2.png"
+        nome_arquivo = f"{tipo}_{usuario_id}{extensao}"
         caminho = os.path.join(pasta, nome_arquivo)
 
         foto.save(caminho)
 
-        return redirect(request.referrer)
+        return redirect(f"/dashboard_{tipo}")
 
     return render_template("editar_foto.html")
 

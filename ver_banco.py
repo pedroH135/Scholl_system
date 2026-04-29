@@ -1,13 +1,32 @@
 import sqlite3
 
-conn = sqlite3.connect("escola.db")
-cursor = conn.cursor()
+def ver_tabela(nome_tabela):
+    conn = sqlite3.connect("escola.db")
+    cursor = conn.cursor()
 
-cursor.execute("SELECT * FROM usuarios")
+    print(f"\nTABELA: {nome_tabela.upper()}")
+    print("-" * 40)
 
-dados = cursor.fetchall()
+    try:
+        cursor.execute(f"SELECT * FROM {nome_tabela}")
+        dados = cursor.fetchall()
 
-for usuario in dados:
-    print(usuario)
+        if not dados:
+            print("⚠️ Nenhum registro encontrado.")
+        else:
+            for linha in dados:
+                print(linha)
 
-conn.close()
+    except Exception as e:
+        print("Erro:", e)
+
+    conn.close()
+
+
+# 🔥 visualizar várias tabelas
+ver_tabela("usuarios")
+ver_tabela("materias")
+ver_tabela("notas")
+ver_tabela("professor_materias")
+ver_tabela("feedbacks")
+ver_tabela("presenca")
