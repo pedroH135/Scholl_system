@@ -36,10 +36,9 @@ Recursos adicionados além do planejamento inicial para elevar a qualidade do so
 
 Para atingir a conformidade total com o documento de planejamento de Pedro:
 
-* **Expansão do Banco de Dados**: Inclusão dos campos de Endereço, Telefone e Filiação (conforme item 1 do plano).
-* **Módulo de Calendário Visual**: Implementação da interface de cronograma (item 7).
+* **Cadastro e Login por CPF**: Adição de uma API que possa fazer com que o usuário entre no sistema apartir de um CPF válido.
+* **Módulo de Calendário Visual**: Implementação da interface de cronograma e que essa interface tenha uma intima relação com a funcionalidade de presença(item 7).
 * **Exportador de Histórico (PDF)**: Função para gerar o arquivo de histórico para download (item 8).
-* **Dashboards com Gráficos**: Integração de bibliotecas visuais para estatísticas de desempenho (item 10).
 
 ---
 
