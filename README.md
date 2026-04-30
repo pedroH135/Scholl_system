@@ -55,14 +55,15 @@ Tanto o `Aluno` quanto o `Professor` são, antes de tudo, um `Usuario`. Ao herda
 ## 🎭 Sessão: Polimorfismo
 
 ### Como foi feito
-O **Polimorfismo** foi implementado através da sobrescrita de métodos (*Method Overriding*). A classe base `Usuario` define métodos genéricos que as subclasses adaptam para sua realidade.
+*O Polimorfismo foi aplicado no sistema para permitir que a aplicação execute comportamentos diferentes usando o mesmo comando, dependendo de quem está logado.
 
-**Exemplo Prático no Sistema:**
-O método `obter_dados_presenca()` é chamado pela mesma rota no controlador (`app.py`), porém:
-* Na classe **Professor**, o método retorna uma matriz de todos os alunos da turma para lançamento de faltas.
-* Na classe **Aluno**, o mesmo método retorna apenas o histórico individual e o total de faltas do estudante.
+*No código, isso acontece principalmente nos métodos de "Obtenção de Dados" (obter_dados_feedback, obter_dados_materiais, obter_dados_presenca):
 
-Isso permite que o sistema seja flexível e "inteligente", tratando objetos de tipos diferentes de forma unificada.
+*Quando o sistema chama usuario.obter_dados_presenca(), se o objeto for um Professor, ele abre a planilha de lançamento para a turma toda.
+
+*Se o objeto for um Aluno, o mesmo comando abre apenas o relatório individual de faltas.
+
+*Essa técnica deixa o código do app.py muito mais limpo, pois o servidor não precisa saber "quem" está pedindo a informação, ele apenas pede ao objeto para "mostrar seus dados".
 
 ---
 
