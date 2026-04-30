@@ -55,15 +55,15 @@ Tanto o `Aluno` quanto o `Professor` são, antes de tudo, um `Usuario`. Ao herda
 ## 🎭 Sessão: Polimorfismo
 
 ### Como foi feito
-*O Polimorfismo foi aplicado no sistema para permitir que a aplicação execute comportamentos diferentes usando o mesmo comando, dependendo de quem está logado.
+**O Polimorfismo foi aplicado no sistema para permitir que a aplicação execute comportamentos diferentes usando o mesmo comando, dependendo de quem está logado.
 
-*No código, isso acontece principalmente nos métodos de "Obtenção de Dados" (obter_dados_feedback, obter_dados_materiais, obter_dados_presenca):
+**No código, isso acontece principalmente nos métodos de "Obtenção de Dados" (obter_dados_feedback, obter_dados_materiais, obter_dados_presenca):
 
-*Quando o sistema chama usuario.obter_dados_presenca(), se o objeto for um Professor, ele abre a planilha de lançamento para a turma toda.
+**Quando o sistema chama usuario.obter_dados_presenca(), se o objeto for um Professor, ele abre a planilha de lançamento para a turma toda.
 
-*Se o objeto for um Aluno, o mesmo comando abre apenas o relatório individual de faltas.
+**Se o objeto for um Aluno, o mesmo comando abre apenas o relatório individual de faltas.
 
-*Essa técnica deixa o código do app.py muito mais limpo, pois o servidor não precisa saber "quem" está pedindo a informação, ele apenas pede ao objeto para "mostrar seus dados".
+**Essa técnica deixa o código do app.py muito mais limpo, pois o servidor não precisa saber "quem" está pedindo a informação, ele apenas pede ao objeto para "mostrar seus dados".
 
 ---
 
